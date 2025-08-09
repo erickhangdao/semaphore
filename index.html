@@ -9,10 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        /* Custom focus style for accessibility */
+        body { font-family: 'Inter', sans-serif; }
         .focus-style:focus {
             outline: none;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
@@ -24,7 +21,12 @@
     <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg text-center max-w-md w-full">
         
         <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Semaphore Signal Practice</h1>
-        <p class="text-gray-500 mb-6">Can you guess the letter?</p>
+        <p class="text-gray-500 mb-6">Get as many correct as you can before time runs out!</p>
+
+        <!-- Timer Display -->
+        <div class="mb-4 text-2xl font-bold text-gray-700">
+            Time left: <span id="timer" class="text-red-500">2:00</span>
+        </div>
 
         <!-- Semaphore Display -->
         <div class="bg-blue-50 rounded-lg p-4 mb-2 flex justify-center items-center h-48 sm:h-56">
@@ -37,14 +39,14 @@
                 
                 <!-- Semaphore Arms -->
                 <!-- Right Arm (Red) -->
-                <line id="upper_arm1" x1="50" y1="42" x2="50" y2="42" stroke="#F56565" stroke-width="6" stroke-linecap="round" style="transition: all 0.3s ease;"/>
-                <line id="forearm1" x1="50" y1="42" x2="50" y2="42" stroke="#F56565" stroke-width="6" stroke-linecap="round" style="transition: all 0.3s ease;"/>
-                <circle id="elbow1" cx="50" cy="42" r="2" fill="#F56565" style="transition: all 0.3s ease;"/>
+                <line id="upper_arm1" x1="50" y1="42" x2="50" y2="42" stroke="#F56565" stroke-width="6" stroke-linecap="round"/>
+                <line id="forearm1" x1="50" y1="42" x2="50" y2="42" stroke="#F56565" stroke-width="6" stroke-linecap="round"/>
+                <circle id="elbow1" cx="50" cy="42" r="2" fill="#F56565"/>
                 
                 <!-- Left Arm (Blue) -->
-                <line id="upper_arm2" x1="50" y1="42" x2="50" y2="42" stroke="#4299E1" stroke-width="6" stroke-linecap="round" style="transition: all 0.3s ease;"/>
-                <line id="forearm2" x1="50" y1="42" x2="50" y2="42" stroke="#4299E1" stroke-width="6" stroke-linecap="round" style="transition: all 0.3s ease;"/>
-                <circle id="elbow2" cx="50" cy="42" r="2" fill="#4299E1" style="transition: all 0.3s ease;"/>
+                <line id="upper_arm2" x1="50" y1="42" x2="50" y2="42" stroke="#4299E1" stroke-width="6" stroke-linecap="round"/>
+                <line id="forearm2" x1="50" y1="42" x2="50" y2="42" stroke="#4299E1" stroke-width="6" stroke-linecap="round"/>
+                <circle id="elbow2" cx="50" cy="42" r="2" fill="#4299E1"/>
             </svg>
         </div>
         
@@ -88,8 +90,6 @@
             const scoreDisplay = document.getElementById('score');
 
             // --- Semaphore Data ---
-            // Angles are defined with 0 degrees to the right (East), progressing clockwise.
-            // Arm 1 (Red) is the figure's right hand. Arm 2 (Blue) is the left.
             const SEMAPHORE_ALPHABET = {
                 'A': [225, 270], 'B': [180, 270], 'C': [135, 270], 'D': [90, 270],
                 'E': [270, 45],  'F': [270, 0],   'G': [270, 315], 'H': [180, 225],
@@ -105,31 +105,55 @@
             let currentLetter = '';
             let score = 0;
             let total = 0;
+            let countdownInterval;
 
-            // --- Functions ---
+            // --- Timer Functions ---
+            function startGameTimer() {
+                let remaining = 120; // 2 minutes
+                updateTimerDisplay(remaining);
 
-            /**
-             * Draws the semaphore arms on the SVG for a given letter.
-             * @param {string} letter - The letter to display.
-             */
+                countdownInterval = setInterval(() => {
+                    remaining--;
+                    updateTimerDisplay(remaining);
+
+                    if (remaining <= 0) {
+                        clearInterval(countdownInterval);
+                        endGame();
+                    }
+                }, 1000);
+            }
+
+            function updateTimerDisplay(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                document.getElementById('timer').textContent = 
+                    `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            function endGame() {
+                guessInput.disabled = true;
+                checkBtn.disabled = true;
+                nextBtn.disabled = true;
+                resultMessage.textContent = `⏰ Time's up! Final score: ${score} / ${total}`;
+                resultMessage.className = 'h-6 text-lg font-medium text-blue-600';
+            }
+
+            // --- Drawing Function ---
             function drawSemaphore(letter) {
                 if (!SEMAPHORE_ALPHABET[letter]) return;
-
                 const [angle1, angle2] = SEMAPHORE_ALPHABET[letter];
                 const upperArmLength = 17.5;
                 const forearmLength = 17.5;
                 const shoulderX = 50;
                 const shoulderY = 42;
-
                 const rad1 = -angle1 * Math.PI / 180;
                 const rad2 = -angle2 * Math.PI / 180;
 
-                // --- Arm 1 (Right Hand, Red) ---
+                // Right arm
                 const elbowX1 = shoulderX + upperArmLength * Math.cos(rad1);
                 const elbowY1 = shoulderY + upperArmLength * Math.sin(rad1);
                 const handX1 = elbowX1 + forearmLength * Math.cos(rad1);
                 const handY1 = elbowY1 + forearmLength * Math.sin(rad1);
-
                 upper_arm1.setAttribute('x2', elbowX1);
                 upper_arm1.setAttribute('y2', elbowY1);
                 forearm1.setAttribute('x1', elbowX1);
@@ -139,12 +163,11 @@
                 elbow1_dot.setAttribute('cx', elbowX1);
                 elbow1_dot.setAttribute('cy', elbowY1);
 
-                // --- Arm 2 (Left Hand, Blue) ---
+                // Left arm
                 const elbowX2 = shoulderX + upperArmLength * Math.cos(rad2);
                 const elbowY2 = shoulderY + upperArmLength * Math.sin(rad2);
                 const handX2 = elbowX2 + forearmLength * Math.cos(rad2);
                 const handY2 = elbowY2 + forearmLength * Math.sin(rad2);
-
                 upper_arm2.setAttribute('x2', elbowX2);
                 upper_arm2.setAttribute('y2', elbowY2);
                 forearm2.setAttribute('x1', elbowX2);
@@ -155,9 +178,7 @@
                 elbow2_dot.setAttribute('cy', elbowY2);
             }
 
-            /**
-             * Sets up a new challenge for the user.
-             */
+            // --- Challenge Functions ---
             function newChallenge() {
                 currentLetter = letters[Math.floor(Math.random() * letters.length)];
                 drawSemaphore(currentLetter);
@@ -170,9 +191,6 @@
                 nextBtn.classList.add('hidden');
             }
 
-            /**
-             * Checks the user's answer against the correct letter.
-             */
             function checkAnswer() {
                 const userAnswer = guessInput.value.toUpperCase();
                 if (!userAnswer) {
@@ -210,6 +228,7 @@
 
             // --- Initial Load ---
             newChallenge();
+            startGameTimer();
         });
     </script>
 </body>
